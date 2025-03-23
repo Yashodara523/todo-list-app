@@ -53,3 +53,13 @@ mvn spring-boot:run
 
 Open your web browser and navigate to http://localhost:8080 to access the application.
 
+# Alternatively, you can run the application in IntelliJ IDEA
+# Import the project into IntelliJ IDEA.
+- Open IntelliJ IDEA and choose Open.
+- Select your project directory.
+
+# Build the project:
+- Go to Build → Build Project
+  
+# Run the application:
+Go to the Run menu and click on Run 'Application'
