@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            max-width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: calc(100% - 90px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            background: #28a745;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        li {
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .filters {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .filters button {
+            background: #007bff;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .filters button.active {
+            background: #0056b3;
+        }
+        .delete-btn {
+            background: #dc3545;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>To-Do List</h1>
+    <div>
+        <input type="text" id="taskInput" placeholder="Enter a new task">
+        <button onclick="addTask()">Add Task</button>
+    </div>
+
+    <div class="filters">
+        <button onclick="showAllTasks()" class="active">All Tasks</button>
+        <button onclick="showCompletedTasks()">Completed</button>
+        <button onclick="showIncompleteTasks()">Incomplete</button>
+    </div>
+
+    <ul id="taskList"></ul>
+</div>
+
+<script>
+    const API_URL = "http://localhost:8080/api/v1/tasks"; // Base URL
+    const API_GET_ALL = `${API_URL}/get`; // Adjusting for the mismatch
+
+    async function fetchTasks() {
+        const response = await fetch(API_GET_ALL); // Use /get instead
+        const tasks = await response.json();
+        renderTasks(tasks);
+    }
+
+
+        // Render tasks based on filter
+        function renderTasks(tasks) {
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = tasks.map(task => `
+                <li class="${task.completed ? 'completed' : ''}">
+                    ${task.description}
+                    <div>
+                        <button onclick="toggleTask(${task.id}, ${task.completed})">
+                            ${task.completed ? "Undo" : "Complete"}
+                        </button>
+                        <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Add a new task
+        async function addTask() {
+            const taskInput = document.getElementById("taskInput").value;
+            if (!taskInput) return alert("Task cannot be empty!");
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ description: taskInput, completed: false })
+            });
+            document.getElementById("taskInput").value = "";
+            fetchTasks();
+        }
+
+        // Toggle task completion
+        async function toggleTask(id, completed) {
+            await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ completed: !completed })
+            });
+            fetchTasks();
+        }
+
+        // Delete task
+        async function deleteTask(id) {
+            await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+            fetchTasks();
+        }
+
+        // Filter: Show all tasks
+        async function showAllTasks() {
+            const response = await fetch(API_URL);
+            const tasks = await response.json();
+            renderTasks(tasks);
+            setActiveFilter("All Tasks");
+        }
+
+        // Filter: Show completed tasks
+        async function showCompletedTasks() {
+            const response = await fetch(`${API_URL}/completed`);
+            const tasks = await response.json();
+            renderTasks(tasks);
+            setActiveFilter("Completed");
+        }
+
+        // Filter: Show incomplete tasks
+        async function showIncompleteTasks() {
+            const response = await fetch(`${API_URL}/incomplete`);
+            const tasks = await response.json();
+            renderTasks(tasks);
+            setActiveFilter("Incomplete");
+        }
+
+        // Set active filter button
+        function setActiveFilter(filterName) {
+            const buttons = document.querySelectorAll(".filters button");
+            buttons.forEach(button => {
+                if (button.textContent === filterName) {
+                    button.classList.add("active");
+                } else {
+                    button.classList.remove("active");
+                }
+            });
+        }
+
+        // Load tasks when the page loads
+        fetchTasks();
+</script>
+
+</body>
+</html>
